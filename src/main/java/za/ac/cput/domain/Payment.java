@@ -1,17 +1,23 @@
 package za.ac.cput.domain;
 
 import jakarta.persistence.*;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
 public class Payment {
 
     @Id
-    private String paymentId; // Changed from paymentID to paymentId
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long paymentId; // Changed from paymentID to paymentId
 
     private double amount;
     private String status;
     private String transactionCode;
+    @Column(name = "payment_timestamp")
+    private LocalDateTime paymentDate;
 
     protected Payment() {
         // JPA requires a default constructor
@@ -22,10 +28,11 @@ public class Payment {
         this.amount = builder.amount;
         this.status = builder.status;
         this.transactionCode = builder.transactionCode;
+        this.paymentDate = builder.paymentDate;
     }
 
-    // Getters - FIXED NAMING CONVENTION
-    public String getPaymentId() { // Changed from getPaymentID() to getPaymentId()
+    // Getters
+    public Long getPaymentId() {
         return paymentId;
     }
 
@@ -39,6 +46,14 @@ public class Payment {
 
     public String getTransactionCode() {
         return transactionCode;
+    }
+
+    public LocalDateTime getPaymentDate() {
+        return paymentDate;
+    }
+
+    public void setPaymentDate(LocalDateTime paymentDate) {
+        this.paymentDate = paymentDate;
     }
 
     // Business methods
@@ -56,12 +71,13 @@ public class Payment {
 
     // Builder - FIXED METHOD NAMES
     public static class Builder {
-        private String paymentId; // Changed from paymentID to paymentId
+        private Long paymentId; // Changed from paymentID to paymentId
         private double amount;
         private String status;
         private String transactionCode;
+        private LocalDateTime paymentDate;
 
-        public Builder setPaymentId(String paymentId) { // Changed from setPaymentID to setPaymentId
+        public Builder setPaymentId(Long paymentId) { // Changed from setPaymentID to setPaymentId
             this.paymentId = paymentId;
             return this;
         }
@@ -81,6 +97,11 @@ public class Payment {
             return this;
         }
 
+        public Builder setPaymentDate(LocalDateTime paymentDate) {
+            this.paymentDate = paymentDate;
+            return this;
+        }
+
         public Payment build() {
             return new Payment(this);
         }
@@ -93,6 +114,7 @@ public class Payment {
                 ", amount=" + amount +
                 ", status='" + status + '\'' +
                 ", transactionCode='" + transactionCode + '\'' +
+                ", paymentDate='" + paymentDate + '\'' +
                 '}';
     }
 

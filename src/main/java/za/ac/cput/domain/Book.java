@@ -7,35 +7,44 @@ Author: Ashton Mondreo Petersen (220219494)
 package za.ac.cput.domain;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 
 @Entity
 public class Book {
     @Id
-    public String isbn;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long bookId;
     public String title;
     public String author;
     public int pages;
     public String genre;
     public int quantity;
     public double price;
+    @Lob
+    public byte[] image;
+    public String imageContentType;
 
     private Book(BookBuilder builder) {
-        this.isbn = builder.isbn;
+        this.bookId = builder.bookId;
         this.title = builder.title;
         this.author = builder.author;
         this.pages = builder.pages;
         this.genre = builder.genre;
         this.quantity = builder.quantity;
         this.price = builder.price;
+        this.image = builder.image;
+        this.imageContentType = builder.imageContentType;
     }
 
     public Book() {
 
     }
 
-    public String getIsbn() {
-        return isbn;
+    public Long getBookId() {
+        return bookId;
     }
 
     public String getTitle() {
@@ -58,8 +67,28 @@ public class Book {
         return quantity;
     }
 
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
     public double getPrice() {
         return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public String getImageContentType() {
+        return imageContentType;
+    }
+
+    public void setImageContentType(String imageContentType) {
+        this.imageContentType = imageContentType;
     }
 
     //A method to check if there is stock of the book
@@ -89,29 +118,29 @@ public class Book {
 
     @Override
     public String toString() {
-        return "Book{" +
-                "isbn='" + isbn + '\'' +
-                ", title='" + title + '\'' +
-                ", author='" + author + '\'' +
-                ", pages=" + pages +
-                ", genre='" + genre + '\'' +
-                ", quantity=" + quantity +
-                ", price=" + price +
-                '}';
+    return "Book{" +
+        "bookId='" + bookId + '\'' +
+        ", title='" + title + '\'' +
+        ", author='" + author + '\'' +
+        ", pages=" + pages +
+        ", genre='" + genre + '\'' +
+        ", quantity=" + quantity +
+        ", price=" + price +
+        '}';
     }
 
     public static class BookBuilder {
-
-        private String isbn;
+        private Long bookId;
         private String title;
         private String author;
         private int pages;
         private String genre;
         private int quantity;
         private double price;
+        private byte[] image;
+    private String imageContentType;
 
-        public BookBuilder(String isbn, String title, String author, int pages, String genre, int quantity, double price) {
-            this.isbn = isbn;
+        public BookBuilder(String title, String author, int pages, String genre, int quantity, double price) {
             this.title = title;
             this.author = author;
             this.pages = pages;
@@ -120,8 +149,18 @@ public class Book {
             this.price = price;
         }
 
-        public BookBuilder(String isbn, String title, String author, int pages, String genre, double price){
-            this.isbn = isbn;
+        // Backwards-compatible constructor that accepts image content type
+        public BookBuilder(String title, String author, int pages, String genre, int quantity, double price, String imageContentType) {
+            this.title = title;
+            this.author = author;
+            this.pages = pages;
+            this.genre = genre;
+            this.quantity = quantity;
+            this.price = price;
+            this.imageContentType = imageContentType;
+        }
+
+        public BookBuilder(String title, String author, int pages, String genre, double price){
             this.title = title;
             this.author = author;
             this.pages = pages;
@@ -130,9 +169,19 @@ public class Book {
             this.price = price;
         }
 
-        public void setIsbn(String isbn) {
-            this.isbn = isbn;
+        // Backwards-compatible minimal constructor that accepts image content type
+        public BookBuilder(String title, String author, int pages, String genre, double price, String imageContentType){
+            this.title = title;
+            this.author = author;
+            this.pages = pages;
+            this.genre = genre;
+            this.quantity = 1;
+            this.price = price;
+            this.imageContentType = imageContentType;
+        }
 
+        public void setBookId(Long bookId) {
+            this.bookId = bookId;
         }
 
         public void setTitle(String title) {
@@ -160,6 +209,14 @@ public class Book {
 
         public void setPrice(double price) {
             this.price = price;
+        }
+
+        public void setImage(byte[] image) {
+            this.image = image;
+        }
+
+        public void setImageContentType(String imageContentType) {
+            this.imageContentType = imageContentType;
         }
 
         public Book build() {

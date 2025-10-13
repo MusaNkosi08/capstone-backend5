@@ -1,16 +1,26 @@
 package za.ac.cput.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
+@Table(name = "orders") // ✅ avoid SQL reserved keyword "order"
 public class Order {
 
     @Id
-    private int orderId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long orderId; // ✅ only ONE primary key
 
-    private int customerId;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    private User user;
+
     private Date orderDate;
+    @Column(name = "order_timestamp")
+    private LocalDateTime orderTimestamp;
     private String status;
     private double totalAmount;
     private String shippingAddress;
@@ -19,7 +29,7 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "payment_id")
     private Payment payment;
 
@@ -27,7 +37,7 @@ public class Order {
 
     private Order(Builder builder) {
         this.orderId = builder.orderId;
-        this.customerId = builder.customerId;
+        this.user = builder.user;
         this.orderDate = new Date();
         this.status = builder.status;
         this.shippingAddress = builder.shippingAddress;
@@ -37,9 +47,13 @@ public class Order {
         calculateTotal();
     }
 
-    public int getOrderId() { return orderId; }
-    public int getCustomerId() { return customerId; }
+    public Long getOrderId() { return orderId; }
+    public User getUser() { return user; }
+        public void setUser(User user) { this.user = user; }
     public Date getOrderDate() { return orderDate; }
+    public void setOrderDate(Date orderDate) { this.orderDate = orderDate; }
+    public LocalDateTime getOrderTimestamp() { return orderTimestamp; }
+    public void setOrderTimestamp(LocalDateTime orderTimestamp) { this.orderTimestamp = orderTimestamp; }
     public String getStatus() { return status; }
     public double getTotalAmount() { return totalAmount; }
     public String getShippingAddress() { return shippingAddress; }
@@ -48,21 +62,21 @@ public class Order {
     public Payment getPayment() { return payment; }
 
     public static class Builder {
-        private int orderId;
-        private int customerId;
+        private Long orderId; // ⚠️ keep this if you want to set manually, but usually DB generates it
+        private User user;
         private String shippingAddress;
         private String paymentMethod;
         private String status = "Pending";
         private List<OrderItem> items = new ArrayList<>();
         private Payment payment;
 
-        public Builder orderId(int orderId) {
+        public Builder orderId(Long orderId) {
             this.orderId = orderId;
             return this;
         }
 
-        public Builder customerId(int customerId) {
-            this.customerId = customerId;
+        public Builder user(User user) {
+            this.user = user;
             return this;
         }
 
@@ -106,7 +120,7 @@ public class Order {
     }
 
     public void addItem(OrderItem item) {
-     //   item.setOrder(this); // Set back-reference
+        // item.setOrder(this); // Uncomment if OrderItem has @ManyToOne
         items.add(item);
         calculateTotal();
     }
@@ -119,7 +133,7 @@ public class Order {
     public String getOrderDetails() {
         StringBuilder details = new StringBuilder();
         details.append("Order ID: ").append(orderId).append("\n");
-        details.append("Customer ID: ").append(customerId).append("\n");
+        details.append("User ID: ").append(user != null ? user.getUserId() : "N/A").append("\n");
         details.append("Order Date: ").append(orderDate).append("\n");
         details.append("Status: ").append(status).append("\n");
         details.append("Total Amount: ").append(String.format("%.2f", totalAmount)).append("\n");

@@ -1,25 +1,59 @@
 package za.ac.cput.domain;
 
-//tyrese ntate 221817816
+import jakarta.persistence.*;
 
+@Entity
 public class OrderItem {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int itemId;
     private int quantity;
     private double price;
 
-   
+    @ManyToOne
+    @JoinColumn(name = "book_id", referencedColumnName = "bookId")
+    private Book book;
+
+    @ManyToOne
+    @JoinColumn(name = "order_id", referencedColumnName = "orderId")
+    private Order order;
+
+    protected OrderItem() {}
+
     private OrderItem(Builder builder) {
         this.itemId = builder.itemId;
         this.quantity = builder.quantity;
         this.price = builder.price;
+        this.order = builder.order;
     }
 
-  
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
+    }
+
+    // Add setters so Jackson/JPA can populate fields reliably
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public void setBook(Book book) {
+        this.book = book;
+    }
+
     public static class Builder {
         private int itemId;
         private int quantity;
         private double price;
+        private Order order;
 
         public Builder itemId(int itemId) {
             this.itemId = itemId;
@@ -33,6 +67,11 @@ public class OrderItem {
 
         public Builder price(double price) {
             this.price = price;
+            return this;
+        }
+
+        public Builder order(Order order) {
+            this.order = order;
             return this;
         }
 
@@ -59,5 +98,9 @@ public class OrderItem {
 
     public double getPrice() {
         return price;
+    }
+
+    public Book getBook() {
+        return book;
     }
 }
