@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import za.ac.cput.domain.Book;
 import za.ac.cput.domain.Order;
@@ -27,6 +29,8 @@ public class OrderController {
 
     @Autowired
     private IBookRepository bookRepository;
+
+    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
 
     @PostMapping("/create")
     @Transactional
@@ -113,5 +117,20 @@ public class OrderController {
             return true;
         }
         return false;
+    }
+
+    @PutMapping("/cancel/{orderId}")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long orderId) {
+        return orderRepository.findById(orderId)
+                .map(order -> {
+                    if ("cancelled".equalsIgnoreCase(order.getStatus())) {
+                        return ResponseEntity.badRequest().body("Order already cancelled");
+                    }
+                    order.updateStatus("cancelled");
+                    Order saved = orderRepository.save(order);
+                    logger.info("Order {} cancelled", orderId);
+                    return ResponseEntity.ok(saved);
+                })
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found"));
     }
 }
