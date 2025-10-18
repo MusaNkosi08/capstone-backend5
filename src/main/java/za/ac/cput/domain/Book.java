@@ -83,6 +83,10 @@ public class Book {
         return image;
     }
 
+    public void setImage(byte[] image) {
+        this.image = image;
+    }
+
     public String getImageContentType() {
         return imageContentType;
     }

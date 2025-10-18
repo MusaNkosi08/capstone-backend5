@@ -132,5 +132,32 @@ public class BookController {
                 })
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Not found")));
     }
+
+    // Allow authenticated users (students and admins) to upload or replace a book cover.
+    // This endpoint intentionally allows any authenticated user. If you prefer only admins,
+    // change to @PreAuthorize("hasRole('ADMIN')").
+    @PostMapping(value = "/{bookId}/upload-image", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> uploadBookImage(@PathVariable Long bookId,
+                                             @RequestParam("image") MultipartFile image) {
+        return repository.findById(bookId)
+                .map(book -> {
+                    try {
+                        byte[] imageBytes = image != null ? image.getBytes() : null;
+                        String contentType = image != null ? image.getContentType() : null;
+                        if (imageBytes == null || imageBytes.length == 0) {
+                            return ResponseEntity.badRequest().body(Map.of("error", "No image provided"));
+                        }
+                        book.setImage(imageBytes);
+                        book.setImageContentType(contentType);
+                        repository.save(book);
+                        logger.info("User uploaded image for book id={} title='{}' - bytes={} contentType={}", bookId, book.getTitle(), imageBytes.length, contentType);
+                        return ResponseEntity.ok(Map.of("bookId", bookId, "imageLength", imageBytes.length));
+                    } catch (Exception e) {
+                        logger.error("Error saving uploaded image for book id={}", bookId, e);
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to save image"));
+                    }
+                })
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Book not found")));
+    }
 }
 
