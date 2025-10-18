@@ -4,11 +4,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -18,44 +18,52 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          UserDetailsService userDetailsService,
+                          PasswordEncoder passwordEncoder) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Disable default form login and httpBasic; Security will use JWT filter and our UserDetailsService for auth
-        http
-            .httpBasic().disable()
-            .formLogin().disable();
 
         http
-            .csrf().disable()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+            // Disable default authentication forms and CSRF (since we’re using JWT)
+            .csrf(csrf -> csrf.disable())
+            .httpBasic(httpBasic -> httpBasic.disable())
+            .formLogin(form -> form.disable())
+
+            // Stateless JWT-based session management
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            // Configure endpoint access rules
             .authorizeHttpRequests(auth -> auth
-                // public endpoints: allow registration, login, book list and book images (so browsers can fetch <img src>)
                 .requestMatchers(
                     "/api/users/create",
                     "/api/users/login",
                     "/api/book/all",
                     "/api/book/*/image",
                     "/api/book/*/image-info",
-                    // allow public contact/newsletter submissions
                     "/api/contacts",
                     "/api/contacts/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
+
+            // Add JWT filter before UsernamePasswordAuthenticationFilter
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // Build an AuthenticationManager that uses our UserDetailsService + password encoder
+        // Configure AuthenticationManager with our custom UserDetailsService
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
-        // PasswordEncoder bean will be picked up automatically by DaoAuthenticationProvider (from context)
+        provider.setPasswordEncoder(passwordEncoder);
 
-        AuthenticationManager authenticationManager = new org.springframework.security.authentication.ProviderManager(provider);
+        AuthenticationManager authenticationManager =
+                new org.springframework.security.authentication.ProviderManager(provider);
         http.setSharedObject(AuthenticationManager.class, authenticationManager);
 
         return http.build();
